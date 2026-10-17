@@ -439,14 +439,10 @@ Item {
         if (nid === undefined || nid === null || nid === "") return;
         let addr = root._formatHyprAddress(nid);
         if (typeof Hyprland !== "undefined") {
-            if (Hyprland.usingLua !== false) {
-                Hyprland.dispatch("hl.dsp.focus({ window = \"" + addr + "\" })");
-            } else {
-                Hyprland.dispatch("focuswindow " + addr);
-            }
+            Hyprland.dispatch("focuswindow " + addr);
             return;
         }
-        Quickshell.execDetached(["sh", "-c", "hyprctl dispatch 'hl.dsp.focus({ window = \"" + addr + "\" })' 2>/dev/null || hyprctl dispatch focuswindow " + addr]);
+        Quickshell.execDetached(["hyprctl", "dispatch", "focuswindow", addr]);
     }
 
     function _closeHyprland(win) {
@@ -455,14 +451,10 @@ Item {
         if (nid === undefined || nid === null || nid === "") return;
         let addr = root._formatHyprAddress(nid);
         if (typeof Hyprland !== "undefined") {
-            if (Hyprland.usingLua !== false) {
-                Hyprland.dispatch("hl.dsp.window.close({ window = \"" + addr + "\" })");
-            } else {
-                Hyprland.dispatch("closewindow " + addr);
-            }
+            Hyprland.dispatch("closewindow " + addr);
             return;
         }
-        Quickshell.execDetached(["sh", "-c", "hyprctl dispatch 'hl.dsp.window.close({ window = \"" + addr + "\" })' 2>/dev/null || hyprctl dispatch closewindow " + addr]);
+        Quickshell.execDetached(["hyprctl", "dispatch", "closewindow", addr]);
     }
 
     function focusWindow(win) {

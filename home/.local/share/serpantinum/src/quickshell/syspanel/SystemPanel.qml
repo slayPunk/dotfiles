@@ -608,6 +608,14 @@ Item {
                     panel: root
                 }
 
+                SystemPanelSensors {
+                    panel: root
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: root.s(92)
+                    opacity: root.introCore
+                    transform: Translate { x: (root.isLeftAnchored ? -root.rowSlideDistance : root.rowSlideDistance) * (1.0 - root.introCore) }
+                }
+
                 NotificationBox {
                     id: notifsBox
                     Layout.fillWidth: true

@@ -1,0 +1,14 @@
+quickshell
+power-profiles-daemon
+xdg-desktop-portal
+xdg-desktop-portal-hyprland
+xdg-desktop-portal-gtk
+python
+python-jeepney
+python-websockets
+qt6-websockets
+lm_sensors
+git
+patch
+clang
+lld

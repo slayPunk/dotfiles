@@ -745,6 +745,8 @@ Item {
             id: groupBgRect
             z: 0
             property var groupIds: modelData
+            readonly property bool solidStyle: parent ? !!parent.isSolid : false
+            readonly property bool separatePills: parent ? !!parent.distinctPills : false
 
             function getGroupMetrics() {
                 let firstX = -1;
@@ -791,7 +793,7 @@ Item {
                 z: -1
                 anchors.fill: parent
                 radius: parent.radius
-                surfaceEnabled: !contentWrapper.isSolid
+                surfaceEnabled: !parent.solidStyle
                 standalone: true
             }
 
@@ -800,7 +802,7 @@ Item {
                 anchors.fill: parent
                 z: -1
                 radius: parent.radius
-                allowed: contentWrapper.isSolid && contentWrapper.distinctPills
+                allowed: parent.solidStyle && parent.separatePills
                 tintColor: ThemeBackend.surface0
                 tintAmount: 0.3
             }

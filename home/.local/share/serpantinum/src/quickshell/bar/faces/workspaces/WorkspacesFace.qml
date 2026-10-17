@@ -192,7 +192,7 @@ Item {
         } else if (isMango) {
             Quickshell.execDetached(["mmsg", "dispatch", "view," + wsId]);
         } else {
-            Hyprland.dispatch("hl.dsp.focus({ workspace = " + wsId + " })");
+            Hyprland.dispatch("workspace " + wsId);
         }
     }
 

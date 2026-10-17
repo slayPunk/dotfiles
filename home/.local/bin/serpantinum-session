@@ -2,4 +2,7 @@
 set -euo pipefail
 export PATH="$HOME/.local/bin:$PATH"
 export QT_QPA_PLATFORM=wayland
+if command -v dbus-update-activation-environment >/dev/null 2>&1; then
+    dbus-update-activation-environment --systemd DISPLAY WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE XDG_SESSION_DESKTOP HYPRLAND_INSTANCE_SIGNATURE || true
+fi
 exec "$HOME/.local/share/serpantinum/bin/serpantinumd" start

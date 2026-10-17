@@ -1,0 +1,590 @@
+--- a/src/quickshell/syspanel/SystemPanel.qml
++++ b/src/quickshell/syspanel/SystemPanel.qml
+@@ -82,6 +82,74 @@
+         }
+     }
+ 
++    property string hardwareProfile: ""
++    property var hardwareProfileChoices: []
++    readonly property var profileDefinitions: [
++        { value: "low-power", icon: "󰌪", label: I18n.t("syspanel.profiles.power_saver") },
++        { value: "quiet", icon: "󰖁", label: I18n.t("syspanel.profiles.quiet", "Quiet") },
++        { value: "balanced", icon: "󰗑", label: I18n.t("syspanel.profiles.balanced") },
++        { value: "balanced-performance", icon: "󰓅", label: I18n.t("syspanel.profiles.performance") },
++        { value: "performance", icon: "󰜎", label: I18n.t("syspanel.profiles.turbo", "Turbo") }
++    ]
++    readonly property var availableProfiles: {
++        const choices = hardwareProfileChoices.length > 0 ? hardwareProfileChoices
++            : (PowerProfiles.hasPerformanceProfile ? ["low-power", "balanced", "performance"] : ["low-power", "balanced"]);
++        return profileDefinitions.filter(profile => choices.indexOf(profile.value) !== -1);
++    }
++    readonly property int hardwareProfileIndex: {
++        const current = hardwareProfile || (powerProfile === "power-saver" ? "low-power" : powerProfile);
++        return availableProfiles.findIndex(profile => profile.value === current);
++    }
++
++    function refreshHardwareProfile() {
++        if (!profileReader.running && !profileSetter.running) profileReader.running = true;
++    }
++
++    function acceptHardwareProfile(text, reportError) {
++        try {
++            const result = JSON.parse(text);
++            if (result.error) {
++                if (reportError) Quickshell.execDetached(["notify-send", "-a", "Serpantinum",
++                    I18n.t("syspanel.profiles.change_failed", "Could not change the power profile"), result.error]);
++                return;
++            }
++            hardwareProfileChoices = result.choices;
++            hardwareProfile = result.profile;
++            // Switch assigns currentIndex on clicks; restore the actual hardware state.
++            profileSwitch.currentIndex = hardwareProfileIndex;
++        } catch (error) {
++            console.warn("Could not read the Acer power profile:", error);
++        }
++    }
++
++    Process {
++        id: profileReader
++        command: ["python3", Caching.serpantinumDir + "/scripts/power-profile.py"]
++        stdout: StdioCollector {
++            onStreamFinished: {
++                if (!profileSetter.running) root.acceptHardwareProfile(text, false);
++            }
++        }
++    }
++
++    Process {
++        id: profileSetter
++        stdout: StdioCollector { onStreamFinished: root.acceptHardwareProfile(text, true) }
++        onExited: root.refreshHardwareProfile()
++    }
++
++    Timer {
++        interval: 1000
++        repeat: true
++        running: root.visible
++        onTriggered: root.refreshHardwareProfile()
++    }
++
++    Connections {
++        target: PowerProfiles
++        function onProfileChanged() { root.refreshHardwareProfile(); }
++    }
++
+     readonly property real sysVolume: Audio.defaultSink && Audio.defaultSink.audio ? Math.round(Audio.defaultSink.audio.volume * 100) : 0
+     readonly property bool sysMuted: Audio.defaultSink && Audio.defaultSink.audio ? Audio.defaultSink.audio.muted : false
+ 
+@@ -181,6 +249,7 @@
+     onVisibleChanged: {
+         NotificationManager.sysPanelOpen = visible;
+         if (visible) {
++            refreshHardwareProfile();
+             forceActiveFocus();
+             resetAndPlayIntro();
+ 
+@@ -208,6 +277,7 @@
+     }
+ 
+     Component.onCompleted: {
++        refreshHardwareProfile();
+         hibernateCheck.running = true;
+         if (visible) {
+             NotificationManager.sysPanelOpen = true;
+@@ -538,6 +608,14 @@
+                     panel: root
+                 }
+ 
++                SystemPanelSensors {
++                    panel: root
++                    Layout.fillWidth: true
++                    Layout.preferredHeight: root.s(92)
++                    opacity: root.introCore
++                    transform: Translate { x: (root.isLeftAnchored ? -root.rowSlideDistance : root.rowSlideDistance) * (1.0 - root.introCore) }
++                }
++
+                 NotificationBox {
+                     id: notifsBox
+                     Layout.fillWidth: true
+@@ -663,45 +741,24 @@
+                         Switch {
+                             id: profileSwitch
+                             anchors.fill: parent
+-                            implicitWidth: root.isDesktop ? parent.width : (PowerProfiles.hasPerformanceProfile ? root.s(240) : root.s(162))
++                            implicitWidth: root.isDesktop ? parent.width : (root.availableProfiles.length > 2 ? root.s(240) : root.s(162))
+                             implicitHeight: root.isDesktop ? root.s(48) : root.s(52)
+                             cornerRadius: root.s(15)
+                             fontPixelSize: root.isDesktop ? root.s(14) : root.s(22)
+-                            options: {
+-                                if (root.isDesktop) {
+-                                    return PowerProfiles.hasPerformanceProfile
+-                                        ? ["󰌪 " + I18n.t("syspanel.profiles.power_saver"), "󰗑 " + I18n.t("syspanel.profiles.balanced"), "󰓅 " + I18n.t("syspanel.profiles.performance")]
+-                                        : ["󰌪 " + I18n.t("syspanel.profiles.power_saver"), "󰗑 " + I18n.t("syspanel.profiles.balanced")];
+-                                } else {
+-                                    return PowerProfiles.hasPerformanceProfile
+-                                        ? ["󰌪", "󰗑", "󰓅"]
+-                                        : ["󰌪", "󰗑"];
+-                                }
+-                            }
++                            options: root.availableProfiles.map(profile => root.isDesktop ? profile.icon + " " + profile.label : profile.icon)
++                            optionTooltips: root.availableProfiles.map(profile => profile.label)
++                            enabled: !profileSetter.running
+                             accentColor: root.profileColor
+                             baseColor: ThemeBackend.surface1
+                             textColor: ThemeBackend.text
+                             activeTextColor: ThemeBackend.crust
+-                            currentIndex: {
+-                                if (PowerProfiles.hasPerformanceProfile) {
+-                                    if (root.powerProfile === "power-saver") return 0;
+-                                    if (root.powerProfile === "balanced") return 1;
+-                                    return 2;
+-                                } else {
+-                                    if (root.powerProfile === "power-saver") return 0;
+-                                    return 1;
+-                                }
+-                            }
++                            currentIndex: root.hardwareProfileIndex
+ 
+                             onValueChanged: (idx, val) => {
+-                                if (PowerProfiles.hasPerformanceProfile) {
+-                                    if (idx === 0) PowerProfiles.profile = PowerProfile.PowerSaver;
+-                                    else if (idx === 1) PowerProfiles.profile = PowerProfile.Balanced;
+-                                    else PowerProfiles.profile = PowerProfile.Performance;
+-                                } else {
+-                                    if (idx === 0) PowerProfiles.profile = PowerProfile.PowerSaver;
+-                                    else PowerProfiles.profile = PowerProfile.Balanced;
+-                                }
++                                const profile = root.availableProfiles[idx];
++                                if (!profile) return;
++                                profileSetter.command = ["python3", Caching.serpantinumDir + "/scripts/power-profile.py", "--set", profile.value];
++                                profileSetter.running = true;
+                             }
+                         }
+                     }
+--- /dev/null
++++ b/src/quickshell/syspanel/SystemPanelSensors.qml
+@@ -0,0 +1,117 @@
++import QtQuick
++import QtQuick.Layouts
++import Quickshell.Io
++import "../"
++import "../reusables"
++
++Item {
++    id: root
++    property var panel
++    readonly property bool active: !!panel && panel.visible
++    property var readings: ({})
++    implicitHeight: s(92)
++
++    function s(value) { return panel ? panel.s(value) : Scaler.s(value); }
++    function refresh() { if (active && !reader.running) reader.running = true; }
++
++    onActiveChanged: {
++        if (active) refresh();
++        else reader.running = false;
++    }
++    Component.onCompleted: refresh()
++
++    Process {
++        id: reader
++        command: ["python3", Caching.serpantinumDir + "/scripts/hardware-sensors.py"]
++        stdout: StdioCollector {
++            onStreamFinished: {
++                if (!text.trim()) return;
++                try { root.readings = JSON.parse(text); }
++                catch (error) { console.warn("Could not read hardware sensors:", error); }
++            }
++        }
++    }
++
++    Timer {
++        interval: 3000
++        repeat: true
++        running: root.active
++        onTriggered: root.refresh()
++    }
++
++    RowLayout {
++        anchors.fill: parent
++        spacing: root.s(5)
++
++        Repeater {
++            model: [
++                { name: "CPU", icon: "󰻠", temperature: root.readings.cpu_temp, rpm: root.readings.cpu_fan_rpm, sleeping: false, accent: ThemeBackend.peach },
++                { name: "GPU", icon: "󰢮", temperature: root.readings.gpu_temp, rpm: root.readings.gpu_fan_rpm, sleeping: root.readings.gpu_state === "sleep", accent: ThemeBackend.sapphire }
++            ]
++            delegate: Rectangle {
++                required property var modelData
++                Layout.fillWidth: true
++                Layout.fillHeight: true
++                radius: root.panel ? root.panel.boxRadius : ThemeBackend.borderRadius
++                color: cardGlass.active ? "transparent" : ThemeBackend.faded(Qt.darker(ThemeBackend.surface0, 1.04))
++
++                GlassFill {
++                    id: cardGlass
++                    anchors.fill: parent
++                    radius: parent.radius
++                    tintColor: ThemeBackend.surface0
++                    tintAmount: 0.3
++                }
++
++                ColumnLayout {
++                    anchors.fill: parent
++                    anchors.margins: root.s(10)
++                    spacing: root.s(4)
++
++                    RowLayout {
++                        spacing: root.s(6)
++                        Text {
++                            text: modelData.icon
++                            color: modelData.accent
++                            font.family: ThemeBackend.iconFont
++                            font.pixelSize: root.s(16)
++                        }
++                        Text {
++                            text: modelData.name
++                            color: ThemeBackend.subtext0
++                            font.family: ThemeBackend.fontFamily
++                            font.pixelSize: root.s(11)
++                            font.weight: Font.DemiBold
++                        }
++                        Item { Layout.fillWidth: true }
++                        Text {
++                            text: modelData.sleeping ? I18n.t("syspanel.sensors.sleeping", "Asleep")
++                                : (modelData.temperature !== undefined && modelData.temperature !== null ? modelData.temperature + "°C" : "—")
++                            color: ThemeBackend.text
++                            font.family: ThemeBackend.fontFamily
++                            font.pixelSize: root.s(21)
++                            font.weight: Font.DemiBold
++                        }
++                    }
++
++                    RowLayout {
++                        spacing: root.s(6)
++                        Text {
++                            text: "󰈐"
++                            color: ThemeBackend.subtext0
++                            font.family: ThemeBackend.iconFont
++                            font.pixelSize: root.s(14)
++                        }
++                        Text {
++                            text: (modelData.rpm !== undefined && modelData.rpm !== null ? modelData.rpm : "—")
++                                + " " + I18n.t("syspanel.sensors.rpm", "RPM")
++                            color: ThemeBackend.subtext0
++                            font.family: ThemeBackend.fontFamily
++                            font.pixelSize: root.s(11)
++                        }
++                    }
++                }
++            }
++        }
++    }
++}
+--- a/src/quickshell/syspanel/qmldir
++++ b/src/quickshell/syspanel/qmldir
+@@ -2,3 +2,4 @@
+ SystemPanelSliders 1.0 SystemPanelSliders.qml
+ SystemPanelQuickActions 1.0 SystemPanelQuickActions.qml
+ SystemPanelPowerActions 1.0 SystemPanelPowerActions.qml
++SystemPanelSensors 1.0 SystemPanelSensors.qml
+--- a/src/quickshell/reusables/inputs/Switch.qml
++++ b/src/quickshell/reusables/inputs/Switch.qml
+@@ -10,6 +10,7 @@
+     implicitHeight: 32
+ 
+     property var options: ["x", "y"]
++    property var optionTooltips: []
+     property int currentIndex: 0
+ 
+     property color accentColor: "#89b4fa"
+@@ -281,6 +282,25 @@
+                         enabled: root.enabled
+                         hoverEnabled: true
+                         cursorShape: root.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
++
++                        ToolTip {
++                            id: optionTooltip
++                            visible: optionMa.containsMouse && root.optionTooltips.length > optionItem.index
++                            delay: 500
++                            text: root.optionTooltips[optionItem.index] || ""
++                            padding: 8
++                            contentItem: Text {
++                                text: optionTooltip.text
++                                font.family: ThemeBackend.fontFamily
++                                font.pixelSize: 12
++                                color: ThemeBackend.text
++                            }
++                            background: Rectangle {
++                                color: ThemeBackend.base
++                                radius: Math.min(root.cornerRadius, 8)
++                                border.color: ThemeBackend.surface1
++                            }
++                        }
+ 
+                         onClicked: {
+                             if (!root.enabled) return;
+--- a/src/quickshell/bar/TopBar.qml
++++ b/src/quickshell/bar/TopBar.qml
+@@ -745,6 +745,8 @@
+             id: groupBgRect
+             z: 0
+             property var groupIds: modelData
++            readonly property bool solidStyle: parent ? !!parent.isSolid : false
++            readonly property bool separatePills: parent ? !!parent.distinctPills : false
+ 
+             function getGroupMetrics() {
+                 let firstX = -1;
+@@ -791,7 +793,7 @@
+                 z: -1
+                 anchors.fill: parent
+                 radius: parent.radius
+-                surfaceEnabled: !contentWrapper.isSolid
++                surfaceEnabled: !parent.solidStyle
+                 standalone: true
+             }
+ 
+@@ -800,7 +802,7 @@
+                 anchors.fill: parent
+                 z: -1
+                 radius: parent.radius
+-                allowed: contentWrapper.isSolid && contentWrapper.distinctPills
++                allowed: parent.solidStyle && parent.separatePills
+                 tintColor: ThemeBackend.surface0
+                 tintAmount: 0.3
+             }
+--- a/src/quickshell/bar/SideBar.qml
++++ b/src/quickshell/bar/SideBar.qml
+@@ -702,6 +702,8 @@
+             id: groupBgRect
+             z: 0
+             property var groupIds: modelData
++            readonly property bool solidStyle: parent ? !!parent.isSolid : false
++            readonly property bool separatePills: parent ? !!parent.distinctPills : false
+ 
+             function getGroupMetrics() {
+                 let firstY = -1;
+@@ -758,7 +760,7 @@
+                 z: -1
+                 anchors.fill: parent
+                 radius: parent.radius
+-                surfaceEnabled: !contentWrapper.isSolid
++                surfaceEnabled: !parent.solidStyle
+                 standalone: true
+             }
+ 
+@@ -767,7 +769,7 @@
+                 anchors.fill: parent
+                 z: -1
+                 radius: parent.radius
+-                allowed: contentWrapper.isSolid && contentWrapper.distinctPills
++                allowed: parent.solidStyle && parent.separatePills
+                 tintColor: ThemeBackend.surface0
+                 tintAmount: 0.3
+             }
+--- a/src/quickshell/bar/faces/workspaces/WorkspacesFace.qml
++++ b/src/quickshell/bar/faces/workspaces/WorkspacesFace.qml
+@@ -192,7 +192,7 @@
+         } else if (isMango) {
+             Quickshell.execDetached(["mmsg", "dispatch", "view," + wsId]);
+         } else {
+-            Hyprland.dispatch("hl.dsp.focus({ workspace = " + wsId + " })");
++            Hyprland.dispatch("workspace " + wsId);
+         }
+     }
+ 
+--- a/src/quickshell/singletons/system/WindowTracker.qml
++++ b/src/quickshell/singletons/system/WindowTracker.qml
+@@ -439,14 +439,10 @@
+         if (nid === undefined || nid === null || nid === "") return;
+         let addr = root._formatHyprAddress(nid);
+         if (typeof Hyprland !== "undefined") {
+-            if (Hyprland.usingLua !== false) {
+-                Hyprland.dispatch("hl.dsp.focus({ window = \"" + addr + "\" })");
+-            } else {
+-                Hyprland.dispatch("focuswindow " + addr);
+-            }
+-            return;
+-        }
+-        Quickshell.execDetached(["sh", "-c", "hyprctl dispatch 'hl.dsp.focus({ window = \"" + addr + "\" })' 2>/dev/null || hyprctl dispatch focuswindow " + addr]);
++            Hyprland.dispatch("focuswindow " + addr);
++            return;
++        }
++        Quickshell.execDetached(["hyprctl", "dispatch", "focuswindow", addr]);
+     }
+ 
+     function _closeHyprland(win) {
+@@ -455,14 +451,10 @@
+         if (nid === undefined || nid === null || nid === "") return;
+         let addr = root._formatHyprAddress(nid);
+         if (typeof Hyprland !== "undefined") {
+-            if (Hyprland.usingLua !== false) {
+-                Hyprland.dispatch("hl.dsp.window.close({ window = \"" + addr + "\" })");
+-            } else {
+-                Hyprland.dispatch("closewindow " + addr);
+-            }
+-            return;
+-        }
+-        Quickshell.execDetached(["sh", "-c", "hyprctl dispatch 'hl.dsp.window.close({ window = \"" + addr + "\" })' 2>/dev/null || hyprctl dispatch closewindow " + addr]);
++            Hyprland.dispatch("closewindow " + addr);
++            return;
++        }
++        Quickshell.execDetached(["hyprctl", "dispatch", "closewindow", addr]);
+     }
+ 
+     function focusWindow(win) {
+--- /dev/null
++++ b/src/scripts/power-profile.py
+@@ -0,0 +1,62 @@
++#!/usr/bin/env python3
++"""Read Acer's exact thermal profile and coordinate it with the CPU profile."""
++import json
++import os
++from pathlib import Path
++import subprocess
++import sys
++
++CPU_PROFILES = {
++    'low-power': 'power-saver',
++    'quiet': 'power-saver',
++    'balanced': 'balanced',
++    'balanced-performance': 'balanced',
++    'performance': 'performance',
++}
++
++
++def device():
++    for entry in Path('/sys/class/platform-profile').glob('platform-profile-*'):
++        if (entry / 'name').read_text().strip() == 'acer-wmi':
++            return entry
++    raise RuntimeError('Acer platform profiles are unavailable')
++
++
++def status(entry):
++    return {
++        'profile': (entry / 'profile').read_text().strip(),
++        'choices': [value for value in (entry / 'choices').read_text().split()
++                    if value in CPU_PROFILES],
++    }
++
++
++def main():
++    entry = device()
++    if len(sys.argv) == 1:
++        return status(entry)
++    if len(sys.argv) != 3 or sys.argv[1] != '--set':
++        raise ValueError('Usage: power-profile.py [--set PROFILE]')
++    target = sys.argv[2]
++    if target not in CPU_PROFILES or target not in status(entry)['choices']:
++        raise ValueError('Unsupported power profile: ' + target)
++    profile_path = entry / 'profile'
++    # Check access before changing the CPU when an exact extra mode is requested.
++    if target in ('quiet', 'balanced-performance') and not os.access(profile_path, os.W_OK):
++        raise PermissionError('Cannot write the Acer profile; check the udev rule')
++    subprocess.run(['powerprofilesctl', 'set', CPU_PROFILES[target]],
++                   check=True, capture_output=True, text=True, timeout=10)
++    if profile_path.read_text().strip() != target:
++        profile_path.write_text(target + '\n')
++    result = status(entry)
++    if result['profile'] != target:
++        raise RuntimeError('The firmware did not apply the requested profile')
++    return result
++
++
++if __name__ == '__main__':
++    try:
++        print(json.dumps(main()))
++    except (OSError, ValueError, RuntimeError, subprocess.SubprocessError) as exc:
++        detail = getattr(exc, 'stderr', None) or str(exc)
++        print(json.dumps({'error': detail.strip()}))
++        sys.exit(1)
+--- /dev/null
++++ b/src/scripts/hardware-sensors.py
+@@ -0,0 +1,59 @@
++#!/usr/bin/env python3
++"""Read desktop sensors once; avoid waking a suspended NVIDIA GPU."""
++import json
++from pathlib import Path
++import subprocess
++
++
++def read(path):
++    try:
++        return path.read_text().strip()
++    except OSError:
++        return None
++
++
++def number(path, scale=1):
++    try:
++        return round(int(read(path)) / scale)
++    except (TypeError, ValueError):
++        return None
++
++
++def collect():
++    result = {'cpu_temp': None, 'gpu_temp': None,
++              'cpu_fan_rpm': None, 'gpu_fan_rpm': None, 'gpu_state': 'unavailable'}
++    for hwmon in Path('/sys/class/hwmon').glob('hwmon*'):
++        name = read(hwmon / 'name')
++        if name == 'coretemp':
++            for label in hwmon.glob('temp*_label'):
++                if (read(label) or '').startswith('Package id'):
++                    value = number(label.with_name(label.name.replace('_label', '_input')), 1000)
++                    if value is not None:
++                        result['cpu_temp'] = max(result['cpu_temp'] or value, value)
++        elif name == 'acer':
++            result['cpu_fan_rpm'] = number(hwmon / 'fan1_input')
++            result['gpu_fan_rpm'] = number(hwmon / 'fan2_input')
++
++    nvidia = Path('/sys/bus/pci/drivers/nvidia')
++    devices = [entry for entry in nvidia.glob('????:??:??.?')
++               if (read(entry / 'class') or '').startswith('0x03')]
++    if not devices:
++        return result
++    if all(read(entry / 'power/runtime_status') == 'suspended' for entry in devices):
++        result['gpu_state'] = 'sleep'
++        return result
++    try:
++        query = subprocess.run(
++            ['nvidia-smi', '--query-gpu=temperature.gpu', '--format=csv,noheader,nounits'],
++            capture_output=True, text=True, timeout=2, check=True)
++        values = [int(line.strip()) for line in query.stdout.splitlines() if line.strip().isdigit()]
++        if values:
++            result['gpu_temp'] = max(values)
++            result['gpu_state'] = 'active'
++    except (OSError, ValueError, subprocess.SubprocessError):
++        pass
++    return result
++
++
++if __name__ == '__main__':
++    print(json.dumps(collect()))
+--- a/src/assets/languages/ru.json
++++ b/src/assets/languages/ru.json
+@@ -1252,7 +1252,11 @@
+       "mute": "Заглушить",
+       "empty": "У вас нет новых уведомлений."
+     },
++    "sensors": {"rpm": "об/мин", "sleeping": "Спит"},
+     "profiles": {
++      "quiet": "Тихий",
++      "turbo": "Турбо",
++      "change_failed": "Не удалось сменить профиль питания",
+       "performance": "Производительность",
+       "balanced": "Баланс",
+       "power_saver": "Экономия"
+--- a/src/assets/languages/en.json
++++ b/src/assets/languages/en.json
+@@ -1215,7 +1215,11 @@
+       "mute": "Mute",
+       "empty": "You're all caught up."
+     },
++    "sensors": {"rpm": "RPM", "sleeping": "Asleep"},
+     "profiles": {
++      "quiet": "Quiet",
++      "turbo": "Turbo",
++      "change_failed": "Could not change the power profile",
+       "performance": "Performance",
+       "balanced": "Balanced",
+       "power_saver": "Power saver"
