@@ -1,0 +1,103 @@
+{
+  "bar": {
+    "position": "top",
+    "width": 100,
+    "height": 40,
+    "opacity": 100,
+    "style": "fill",
+    "time": {
+      "format": "HH:mm:ss"
+    },
+    "autohide": false,
+    "autohideTimeout": 1000,
+    "modules": {
+      "left": [
+        "left",
+        "workspaces",
+        "media"
+      ],
+      "center": [
+        [
+          "timedate",
+          "info",
+          "weather"
+        ]
+      ],
+      "right": [
+        "tray",
+        [
+          "kb",
+          "wifi",
+          "bt",
+          "vol",
+          "bat"
+        ]
+      ]
+    }
+  },
+  "theme": {
+    "fontFamily": "JetBrains Mono",
+    "borderRadius": 10,
+    "activePreset": "Matugen",
+    "matugen": true
+  },
+  "idle": {
+    "enabled": false,
+    "actions": {
+      "dim": {
+        "id": "dim",
+        "timeout": 150,
+        "enabled": true,
+        "respectInhibitors": true,
+        "mprisInhibit": true,
+        "command": "",
+        "resumeCommand": "",
+        "isCustom": false
+      },
+      "dpms": {
+        "id": "dpms",
+        "timeout": 600,
+        "enabled": true,
+        "respectInhibitors": true,
+        "mprisInhibit": true,
+        "command": "",
+        "resumeCommand": "",
+        "isCustom": false
+      },
+      "lock": {
+        "id": "lock",
+        "timeout": 300,
+        "enabled": true,
+        "respectInhibitors": true,
+        "mprisInhibit": true,
+        "command": "",
+        "resumeCommand": "",
+        "isCustom": false
+      },
+      "suspend": {
+        "id": "suspend",
+        "timeout": 900,
+        "enabled": true,
+        "respectInhibitors": true,
+        "mprisInhibit": true,
+        "command": "",
+        "resumeCommand": "",
+        "isCustom": false
+      }
+    },
+    "lockOnSleep": true,
+    "manualInhibit": false,
+    "caffeineStartTime": 0,
+    "caffeineEndTime": 0
+  },
+  "notifications": {
+    "dnd": false,
+    "position": "top right",
+    "sound": true,
+    "soundFile": ""
+  },
+  "general": {
+    "language": "ru",
+    "muteSfx": false
+  }
+}

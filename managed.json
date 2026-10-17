@@ -1,0 +1,34 @@
+{
+  "home": [
+    ".config/hypr/hyprland.conf",
+    ".config/hypr/hyprland.lua",
+    ".config/hypr/serpantinum",
+    ".config/hypr/xdph.conf",
+    ".config/xdg-desktop-portal/portals.conf",
+    ".config/xdg-desktop-portal/hyprland-portals.conf",
+    ".local/bin/serpantinum-session",
+    ".local/share/serpantinum/src/quickshell/syspanel/SystemPanel.qml",
+    ".local/share/serpantinum/src/quickshell/syspanel/SystemPanelSensors.qml",
+    ".local/share/serpantinum/src/quickshell/syspanel/qmldir",
+    ".local/share/serpantinum/src/quickshell/reusables/inputs/Switch.qml",
+    ".local/share/serpantinum/src/quickshell/bar/TopBar.qml",
+    ".local/share/serpantinum/src/quickshell/bar/SideBar.qml",
+    ".local/share/serpantinum/src/quickshell/bar/faces/workspaces/WorkspacesFace.qml",
+    ".local/share/serpantinum/src/quickshell/singletons/system/WindowTracker.qml",
+    ".local/share/serpantinum/src/scripts/power-profile.py",
+    ".local/share/serpantinum/src/scripts/hardware-sensors.py",
+    ".local/share/serpantinum/src/assets/languages/ru.json",
+    ".local/share/serpantinum/src/assets/languages/en.json"
+  ],
+  "system": [
+    "/etc/udev/rules.d/70-acer-platform-profile.rules",
+    "/etc/systemd/system/power-profiles-daemon.service.d/acer-driver.conf",
+    "/etc/systemd/system/turbo-fan.service",
+    "/etc/pam.d/serpantinum",
+    "/opt/turbo-fan/src/facer.c",
+    "/opt/turbo-fan/Makefile",
+    "/opt/turbo-fan/service.sh",
+    "/opt/turbo-fan/install.sh",
+    "/opt/turbo-fan/uninstall.sh"
+  ]
+}

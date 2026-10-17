@@ -1,0 +1,2 @@
+# Allow the desktop owner to select Acer's additional thermal profiles.
+SUBSYSTEM=="platform-profile", KERNEL=="platform-profile-*", ATTR{name}=="acer-wmi", RUN+="/usr/bin/chown punk /sys%p/profile"
