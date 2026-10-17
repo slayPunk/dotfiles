@@ -1,5 +1,10 @@
 {
   "home": [
+    ".zshrc",
+    ".config/kitty/kitty.conf",
+    ".config/kitty/colors.conf",
+    ".config/cava/config",
+    ".config/fastfetch/config.jsonc",
     ".config/hypr/hyprland.conf",
     ".config/hypr/hyprland.lua",
     ".config/hypr/serpantinum",
