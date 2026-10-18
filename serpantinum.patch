@@ -161,6 +161,31 @@
                              }
                          }
                      }
+--- a/src/quickshell/syspanel/SystemPanelSliders.qml
++++ b/src/quickshell/syspanel/SystemPanelSliders.qml
+@@ -216,5 +216,22 @@
+                 }
+             }
+         }
++
++        ClickButton {
++            Layout.fillWidth: true
++            Layout.preferredHeight: panel.s(42)
++            cornerRadius: panel.s(8)
++            buttonIcon: "󰕾"
++            buttonText: I18n.t("syspanel.audio.mixer", "Sound mixer")
++            subText: I18n.t("syspanel.audio.mixer_description", "Apps and output devices")
++            iconFontSize: panel.s(17)
++            textFontSize: panel.s(12)
++            accentColor: ThemeBackend.surface1
++            textColor: ThemeBackend.text
++            onClicked: {
++                panel.closeAnim.start();
++                Quickshell.execDetached(["pavucontrol", "--tab=1"]);
++            }
++        }
+     }
+ }
 --- /dev/null
 +++ b/src/quickshell/syspanel/SystemPanelSensors.qml
 @@ -0,0 +1,117 @@
@@ -562,7 +587,15 @@
 +    print(json.dumps(collect()))
 --- a/src/assets/languages/ru.json
 +++ b/src/assets/languages/ru.json
-@@ -1252,7 +1252,11 @@
+@@ -1240,6 +1240,7 @@
+     "start_preview": "Начать предпросмотр"
+   },
+   "syspanel": {
++    "audio": {"mixer": "Микшер звука", "mixer_description": "Приложения и устройства вывода"},
+     "user": {
+       "default_name": "Пользователь",
+       "default_os": "Linux",
+@@ -1252,7 +1253,11 @@
        "mute": "Заглушить",
        "empty": "У вас нет новых уведомлений."
      },
@@ -576,7 +609,15 @@
        "power_saver": "Экономия"
 --- a/src/assets/languages/en.json
 +++ b/src/assets/languages/en.json
-@@ -1215,7 +1215,11 @@
+@@ -1203,6 +1203,7 @@
+     "start_preview": "Start preview"
+   },
+   "syspanel": {
++    "audio": {"mixer": "Sound mixer", "mixer_description": "Apps and output devices"},
+     "user": {
+       "default_name": "User",
+       "default_os": "Linux",
+@@ -1215,7 +1216,11 @@
        "mute": "Mute",
        "empty": "You're all caught up."
      },

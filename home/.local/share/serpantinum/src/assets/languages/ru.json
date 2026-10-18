@@ -1240,6 +1240,7 @@
     "start_preview": "Начать предпросмотр"
   },
   "syspanel": {
+    "audio": {"mixer": "Микшер звука", "mixer_description": "Приложения и устройства вывода"},
     "user": {
       "default_name": "Пользователь",
       "default_os": "Linux",

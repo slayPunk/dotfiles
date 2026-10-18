@@ -1203,6 +1203,7 @@
     "start_preview": "Start preview"
   },
   "syspanel": {
+    "audio": {"mixer": "Sound mixer", "mixer_description": "Apps and output devices"},
     "user": {
       "default_name": "User",
       "default_os": "Linux",

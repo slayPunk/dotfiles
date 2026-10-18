@@ -13,6 +13,7 @@
     ".config/xdg-desktop-portal/hyprland-portals.conf",
     ".local/bin/serpantinum-session",
     ".local/share/serpantinum/src/quickshell/syspanel/SystemPanel.qml",
+    ".local/share/serpantinum/src/quickshell/syspanel/SystemPanelSliders.qml",
     ".local/share/serpantinum/src/quickshell/syspanel/SystemPanelSensors.qml",
     ".local/share/serpantinum/src/quickshell/syspanel/qmldir",
     ".local/share/serpantinum/src/quickshell/reusables/inputs/Switch.qml",

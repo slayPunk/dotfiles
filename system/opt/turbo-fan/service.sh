@@ -1,4 +1,4 @@
-KERNELVERSION="7.1.8-1-cachyos"
+KERNELVERSION="7.2.9-2-cachyos"
 cd /opt/turbo-fan
 
 rm /dev/acer-gkbbl-0 /dev/acer-gkbbl-static-0 -f

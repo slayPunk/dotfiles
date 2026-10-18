@@ -33,7 +33,28 @@
           "bat"
         ]
       ]
-    }
+    },
+    "distinctPills": false,
+    "centerByEdges": true,
+    "groupColors": {
+      "g_timedate": "#ffb2b9",
+      "g_kb": "#5d411b"
+    },
+    "workspacesStyle": "pacman",
+    "timeStyle": "classic",
+    "visAlignment": "center",
+    "visContinuous": false,
+    "sysmonStats": [
+      "cpu",
+      "ram",
+      "temp"
+    ],
+    "batStyle": "text",
+    "wifiStyle": "text",
+    "btStyle": "text",
+    "volStyle": "text",
+    "kbStyle": "text",
+    "mediaInfoMode": "author"
   },
   "theme": {
     "fontFamily": "JetBrains Mono",
@@ -94,7 +115,7 @@
     "dnd": false,
     "position": "top right",
     "sound": true,
-    "soundFile": ""
+    "soundFile": "/home/punk/.local/share/serpantinum/src/assets/sounds/notifications/Botanica.wav"
   },
   "general": {
     "language": "ru",
